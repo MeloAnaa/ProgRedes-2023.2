@@ -11,10 +11,10 @@ try:
         print("a quantidade precisa ser positiva")
     else:
      for i in range(quantidade_valores):
-        numero_aleatorio = random.randint(1, 1000000)  # Gere um número aleatório entre 1 e 100 (ajuste o intervalo conforme necessário)
+        numero_aleatorio = random.randint(1, 1000000) 
         numeros_aleatorios.append(numero_aleatorio)
 
-    print("Números aleatórios:", numeros_aleatorios)
+    print("Numeros aleatorios:", numeros_aleatorios)
 
     with open('lista_nao_ordenada.txt', 'w') as arquivo:
         for numero in numeros_aleatorios:
@@ -22,7 +22,7 @@ try:
 
     print("Lista salva em 'lista_nao_ordenada.txt'.")
 except ValueError:
-    print("Erro: Digite um número válido para a quantidade de valores.")
+    print("Erro: Digite um numero valido para a quantidade de valores.")
 except IOError:
     print("Erro ao abrir/salvar o arquivo 'lista_nao_ordenada.txt'. Verifique as permissões ou o caminho do arquivo.")
 except Exception as e:
