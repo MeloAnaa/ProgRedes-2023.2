@@ -1,6 +1,5 @@
-'''fazer um programa que gere uma lista com n elementos inteiros positivos aleatorios e salve em um arquivo com o nome lista_nao_ordenada.txt'''
-
-
+'''fazer um programa que gere uma lista com n elementos inteiros positivos aleatorios e salve em um arquivo
+com o nome lista_nao_ordenada.txt'''
 
 import random
 try:
