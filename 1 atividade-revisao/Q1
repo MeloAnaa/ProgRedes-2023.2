@@ -1,1 +1,55 @@
 
+import sys
+import os
+
+#criando uma funcao pra atender os requisitos i,ii e iii do item B
+def gerar_lista(quantidade, valor_minimo, valor_maximo):
+    try:
+        quantidade = int(quantidade)
+        valor_minimo = int(valor_minimo)
+        valor_maximo = int(valor_maximo)
+    except ValueError:
+        return False, None
+
+    if valor_minimo > valor_maximo:
+        return False, None
+
+    import random
+    lista_gerada = [random.randint(valor_minimo, valor_maximo) for _ in range(quantidade)]
+    return True, lista_gerada
+
+#criando uma segunda funcao pra atender os requisitos i, ii, iii e iv do item c
+def salvar_lista(nome_lista, nome_arquivo):
+    try:
+        with open(nome_arquivo, 'w') as arquivo:
+            for item in nome_lista:
+                arquivo.write(str(item) + '\n') #esta linha escreve cada elemento da lista(convertido pra string) no arquivo, seguido por quebra de linha. isso significa que cada elemento sera escrito em uma linha separada no arquivo
+        return True
+    except Exception as e: #captura qualquer execeção que possa ocorrer durante a execução do bloco try, e associa a uma variavel chamada 'e'
+        return False
+
+def main():
+    #inicializando tratamento de exceções  com os input
+    try:
+        valor1 = int(input("Digite o primeiro valor inteiro: "))
+        valor2 = int(input("Digite o segundo valor inteiro: "))
+        valor3 = int(input("Digite o terceiro valor inteiro: "))
+    except ValueError:
+        print("Valores informados não são inteiros válidos.")
+        return
+
+    resultado, lista_gerada = gerar_lista(3, valor1, valor2)
+
+
+#salvando a lista no mesmo diretório
+    if resultado:
+        nome_arquivo = input("Digite o nome do arquivo para salvar a lista: ")
+        if salvar_lista(lista_gerada, nome_arquivo):
+            print("Lista foi salva com sucesso!")
+        else:
+            print("Ocorreu um erro ao salvar a lista.")
+    else:
+        print("Não foi possível gerar a lista com os valores informados.")
+
+if __name__ == "__main__":
+    main()
