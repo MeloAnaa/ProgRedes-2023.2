@@ -1,0 +1,43 @@
+#   q2- corrigir
+
+
+
+import os, sys
+dirapp = os.path.abspath(__file__)    
+print(dirapp)
+dirapp = os.path.dirname(dirapp)
+print(dirapp)
+
+try:
+  #solicitar arquivo q1
+  dirApp = os.path.abspath(__file__)
+  dirApp = os.path.dirname(dirApp) 
+  input_path = os.path.join(dirApp, 'q1.py')
+except:
+ print('arquivo nao encontrado')
+else:
+   arq_input = open(input_path, 'r', encoding='utf-8')
+
+ler_arquivo = list()
+def ler_arquivo(nome_arquivo):
+ while ler_arquivo == True:
+      print("arquivo lido com sucesse")
+ else:
+      print("erro, arquivo nao lido")
+    
+ return True, ler_arquivo
+ 
+ 
+def ordena_lista(nome_lista, metodo_ordena):
+    metodo_ordena = sorted(nome_lista)  #bubble,imsertion,selection ou quick
+    while ordena_lista ==True:
+        
+        print("lista ordenada")
+        return True
+    else:
+        print("lista nao ordenada")
+    return False
+
+
+  #fechando os arquivos
+arq_input.close()
