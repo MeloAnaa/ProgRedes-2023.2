@@ -1,0 +1,65 @@
+import os
+# Diretorio onde os arquivos estao localizados
+diretorio_arquivos = "serie_historica_anp"
+
+# Verifica se o diretorio 'dados_estatisticos' ja existe, se nao, cria.
+if not os.path.exists("dados_estatisticos"):
+    os.mkdir("dados_estatisticos")
+
+# Funcao para calcular a media e quantidade de postos por dados
+def calcular_media_e_quantidade(dados):
+    valores_validos = [float(dado[4]) for dado in dados if is_float(dado[4])]  # Índice 4 é o valor de venda
+    quantidade_postos = len(valores_validos)
+    if quantidade_postos == 0:
+        return 0.0, 0
+    valor_total = sum(valores_validos)
+    return valor_total / quantidade_postos, quantidade_postos
+
+def is_float(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+# Dicionarios para armazenar informacoes agregadas
+dados_agregados_bandeira_produto = {}
+dados_agregados_produto_regiao = {}
+
+# Loop atraves dos arquivos
+for arquivo in os.listdir(diretorio_arquivos):
+    arquivo_path = os.path.join(diretorio_arquivos, arquivo)
+    if os.path.isfile(arquivo_path):
+        with open(arquivo_path, 'r') as f:
+            for linha in f:
+                partes = linha.strip().split(',')
+                if len(partes) == 6: 
+                    regiao_sigla, estado_sigla, produto, data_coleta, valor_venda, bandeira = partes
+                    ano = data_coleta[-4:]  # Extrai o ano dos dados
+                    informacoes = [regiao_sigla, estado_sigla, produto, ano, valor_venda, bandeira]
+
+                    # Salvar a lista gerada em um arquivo chamado serie_historica_anp.txt
+                    with open(os.path.join("dados_estatisticos", "serie_historica_anp.txt"), 'a') as output_file:
+                        output_file.write(';'.join(informacoes) + '\n')
+                    chave_bandeira_produto = (bandeira, produto)
+                    dados_agregados_bandeira_produto.setdefault(chave_bandeira_produto, []).append(informacoes)
+                    chave_produto_regiao = (produto, regiao_sigla)
+                    dados_agregados_produto_regiao.setdefault(chave_produto_regiao, []).append(informacoes)
+
+# Funcao para calcular media e quantidade de postos e salvar em arquivo
+def calcular_media_e_salvar(dados_agregados, nome_arquivo):
+    with open(os.path.join("dados_estatisticos", nome_arquivo), 'w') as f:
+        f.write(f"bandeira;produto;ano;valor_medio_venda;quantidade_postos\n")
+        for chave, dados in dados_agregados.items():
+            bandeira, produto = chave
+            media, quantidade_postos = calcular_media_e_quantidade(dados)
+            f.write(f"{bandeira};{produto};{ano};{media:.2f};{quantidade_postos}\n")
+
+# Calcular médias e salvar em arquivos
+calcular_media_e_salvar(dados_agregados_bandeira_produto, "media_bandeira.txt")
+calcular_media_e_salvar(dados_agregados_produto_regiao, "media_produto_regiao.txt")
+
+print("Operações concluídas com sucesso!") 
+
+
+
