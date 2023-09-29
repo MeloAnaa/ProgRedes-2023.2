@@ -7,11 +7,10 @@ def ler_arquivo_binario(arquivo):
             hex_conteudo = conteudo_binario.hex()
             print(f"Conteúdo do arquivo {arquivo} em hexadecimal:\n{hex_conteudo}")
             
-            # Crie um arquivo PCAP com os pacotes a partir do conteúdo binário
+        
             pcap_file = arquivo.replace('.dump', '.pcap')
             with open(pcap_file, 'wb') as pcap_writer:
                 pcap = dpkt.pcap.Writer(pcap_writer)
-                # Se o conteúdo binário já for um arquivo PCAP válido, você pode copiá-lo diretamente
                 pcap_writer.write(conteudo_binario)
 
             print(f"Arquivo PCAP gerado: {pcap_file}")
@@ -25,8 +24,6 @@ ler_arquivo_binario(arquivo1)
 ler_arquivo_binario(arquivo2)
 
 
-
-# Variáveis para rastrear informações sobre a captura
 inicio_captura = None
 fim_captura = None
 tamanho_maior_pacote = 0
@@ -36,7 +33,6 @@ ip_par_com_maior_trafego = None
 maior_trafego = 0
 interacoes_ip = {}
 
-# Função para ler e analisar o arquivo pcap
 def ler_pcap(arquivo):
     global inicio_captura, fim_captura, tamanho_maior_pacote, pacotes_incompletos, tamanho_total_pacotes, ip_par_com_maior_trafego, maior_trafego, interacoes_ip
 
@@ -44,16 +40,12 @@ def ler_pcap(arquivo):
         pcap = dpkt.pcap.Reader(pcap_file)
 
         for timestamp, buf in pcap:
-            # Atualize o início e o fim da captura
             if inicio_captura is None or timestamp < inicio_captura:
                 inicio_captura = timestamp
             if fim_captura is None or timestamp > fim_captura:
                 fim_captura = timestamp
 
-            # Análise do cabeçalho Ethernet
             eth = dpkt.ethernet.Ethernet(buf)
-
-            # Verifique se o pacote é Ethernet II (tipo 0x0800)
             if eth.type != dpkt.ethernet.ETH_TYPE_IP:
                 continue
 
@@ -84,7 +76,6 @@ def ler_pcap(arquivo):
                 maior_trafego = trafego
                 ip_par_com_maior_trafego = (endereco_origem, endereco_destino)
 
-# Nomes dos arquivos pcap que você deseja ler
 arquivos_pcap = ['cap1.dump', 'cap2.dump']
 
 # Loop através dos arquivos e chame a função para ler e analisar cada um
@@ -92,12 +83,13 @@ for arquivo in arquivos_pcap:
     print(f"Lendo arquivo: {arquivo}")
     ler_pcap(arquivo)
 
-# Respostas às perguntas
 print(f"a) Captura iniciou em: {inicio_captura} e terminou em: {fim_captura}")
 print(f"b) Tamanho do maior pacote capturado: {tamanho_maior_pacote} bytes")
 print(f"c) Pacotes incompletos: {pacotes_incompletos}")
 print(f"d) Tamanho médio dos pacotes capturados: {tamanho_total_pacotes / (pacotes_incompletos + 1)} bytes")
 print(f"e) Par de IP com maior tráfego: {ip_par_com_maior_trafego[0]} <-> {ip_par_com_maior_trafego[1]}")
 print(f"f) Número de interações com outros IPs para o IP da interface capturada: {len(interacoes_ip)}")
+
+
 
 
