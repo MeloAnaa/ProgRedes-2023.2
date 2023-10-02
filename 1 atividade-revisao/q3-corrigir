@@ -78,7 +78,6 @@ def ler_pcap(arquivo):
 
 arquivos_pcap = ['cap1.dump', 'cap2.dump']
 
-# Loop através dos arquivos e chame a função para ler e analisar cada um
 for arquivo in arquivos_pcap:
     print(f"Lendo arquivo: {arquivo}")
     ler_pcap(arquivo)
