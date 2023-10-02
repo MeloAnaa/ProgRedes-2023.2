@@ -1,0 +1,94 @@
+import dpkt
+
+def ler_arquivo_binario(arquivo):
+    try:
+        with open(arquivo, 'rb') as bin_file:
+            conteudo_binario = bin_file.read()
+            hex_conteudo = conteudo_binario.hex()
+            print(f"Conteúdo do arquivo {arquivo} em hexadecimal:\n{hex_conteudo}")
+            
+        
+            pcap_file = arquivo.replace('.dump', '.pcap')
+            with open(pcap_file, 'wb') as pcap_writer:
+                pcap = dpkt.pcap.Writer(pcap_writer)
+                pcap_writer.write(conteudo_binario)
+
+            print(f"Arquivo PCAP gerado: {pcap_file}")
+    except FileNotFoundError:
+        print(f"O arquivo {arquivo} não foi encontrado.")
+
+arquivo1 = 'cap1.dump'
+arquivo2 = 'cap2.dump'
+
+ler_arquivo_binario(arquivo1)
+ler_arquivo_binario(arquivo2)
+
+
+inicio_captura = None
+fim_captura = None
+tamanho_maior_pacote = 0
+pacotes_incompletos = 0
+tamanho_total_pacotes = 0
+ip_par_com_maior_trafego = None
+maior_trafego = 0
+interacoes_ip = {}
+
+def ler_pcap(arquivo):
+    global inicio_captura, fim_captura, tamanho_maior_pacote, pacotes_incompletos, tamanho_total_pacotes, ip_par_com_maior_trafego, maior_trafego, interacoes_ip
+
+    with open(arquivo, 'rb') as pcap_file:
+        pcap = dpkt.pcap.Reader(pcap_file)
+
+        for timestamp, buf in pcap:
+            if inicio_captura is None or timestamp < inicio_captura:
+                inicio_captura = timestamp
+            if fim_captura is None or timestamp > fim_captura:
+                fim_captura = timestamp
+
+            eth = dpkt.ethernet.Ethernet(buf)
+            if eth.type != dpkt.ethernet.ETH_TYPE_IP:
+                continue
+
+            # Obtenha o pacote IP a partir do quadro Ethernet
+            ip = eth.data
+
+            # Tamanho do pacote
+            tamanho_pacote = len(buf)
+            tamanho_total_pacotes += tamanho_pacote
+
+            # Verifique o tamanho do maior pacote
+            if tamanho_pacote > tamanho_maior_pacote:
+                tamanho_maior_pacote = tamanho_pacote
+
+            # Verifique se o pacote está incompleto
+            if len(buf) < ip.len:
+                pacotes_incompletos += 1
+
+            # Rastreie as interações entre endereços IP
+            endereco_origem = dpkt.utils.inet_to_str(ip.src)
+            endereco_destino = dpkt.utils.inet_to_str(ip.dst)
+            interacoes_ip[endereco_origem] = interacoes_ip.get(endereco_origem, set())
+            interacoes_ip[endereco_origem].add(endereco_destino)
+
+            # Verifique qual par de IPs tem o maior tráfego
+            trafego = len(interacoes_ip[endereco_origem])
+            if trafego > maior_trafego:
+                maior_trafego = trafego
+                ip_par_com_maior_trafego = (endereco_origem, endereco_destino)
+
+arquivos_pcap = ['cap1.dump', 'cap2.dump']
+
+for arquivo in arquivos_pcap:
+    print(f"Lendo arquivo: {arquivo}")
+    ler_pcap(arquivo)
+
+print(f"a) Captura iniciou em: {inicio_captura} e terminou em: {fim_captura}")
+print(f"b) Tamanho do maior pacote capturado: {tamanho_maior_pacote} bytes")
+print(f"c) Pacotes incompletos: {pacotes_incompletos}")
+print(f"d) Tamanho médio dos pacotes capturados: {tamanho_total_pacotes / (pacotes_incompletos + 1)} bytes")
+print(f"e) Par de IP com maior tráfego: {ip_par_com_maior_trafego[0]} <-> {ip_par_com_maior_trafego[1]}")
+print(f"f) Número de interações com outros IPs para o IP da interface capturada: {len(interacoes_ip)}")
+
+
+
+
