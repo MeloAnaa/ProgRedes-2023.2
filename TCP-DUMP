@@ -1,6 +1,5 @@
 
 import dpkt
-
 def ler_arquivo_binario(arquivo):
     try:
         with open(arquivo, 'rb') as bin_file:
@@ -68,7 +67,6 @@ def ler_pcap(arquivo):
         print(f"Erro ao ler o arquivo PCAP {arquivo}: {str(e)}")
 
 arquivos_pcap = ['cap1.dump', 'cap2.dump']
-
 inicio_captura = None
 fim_captura = None
 tamanho_maior_pacote = 0
@@ -81,7 +79,6 @@ interacoes_ip = {}
 for arquivo in arquivos_pcap:
     print(f"Lendo arquivo: {arquivo}")
     ler_pcap(arquivo)
-
 print(f"a) Captura iniciou em: {inicio_captura} e terminou em: {fim_captura}")
 print(f"b) Tamanho do maior pacote capturado: {tamanho_maior_pacote} bytes")
 print(f"c) Pacotes incompletos: {pacotes_incompletos}")
