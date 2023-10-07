@@ -1,5 +1,5 @@
 
-import dpkt
+import dpkt,sys
 def ler_arquivo_binario(arquivo):
     try:
         with open(arquivo, 'rb') as bin_file:
