@@ -1,89 +1,110 @@
+import struct
 
-import dpkt,sys
-def ler_arquivo_binario(arquivo):
+def ler_cabecalho_arquivo_cap(arquivo):
     try:
-        with open(arquivo, 'rb') as bin_file:
-            conteudo_binario = bin_file.read()
-            hex_conteudo = conteudo_binario.hex()
-            print(f"Conteúdo do arquivo {arquivo} em hexadecimal:\n{hex_conteudo}")
+        cabecalho = arquivo.read(24)
+        magic_number, major_version, minor_version, reserved1, reserved2, snaplen, fcs, link_type = struct.unpack(
+            '!IHHIIIIH', cabecalho)
+        return {
+            "Número Mágico": hex(magic_number),
+            "Versão Principal": major_version,
+            "Versão Secundária": minor_version,
+            "Reservado1": reserved1,
+            "Reservado2": reserved2,
+            "Tamanho do SnapLen": snaplen,
+            "FCS": fcs,
+            "Tipo de Link": link_type,
+        }
+    except struct.error:
+        return None
 
-            pcap_file = arquivo.replace('.dump', '.pcap')
-            with open(pcap_file, 'wb') as pcap_writer:
-                pcap = dpkt.pcap.Writer(pcap_writer)
-                pcap_writer.write(conteudo_binario)
+def ler_pacotes(arquivo):
+    pacotes = []
+    numero_pacote = 0
+    while True:
+        try:
+            pacote = arquivo.read(16)
+            if not pacote:
+                break
+            numero_pacote += 1
+            info_pacote = ler_pacote(arquivo, numero_pacote)
+            pacotes.append(info_pacote)
+        except struct.error:
+            break
+    return pacotes
 
-            print(f"Arquivo PCAP gerado: {pcap_file}")
-    except FileNotFoundError as e:
-        print(f"Erro: O arquivo {arquivo} não foi encontrado.")
-    except Exception as e:
-        print(f"Erro ao processar o arquivo {arquivo}: {str(e)}")
-
-def ler_pcap(arquivo):
+def ler_pacote(arquivo, numero_pacote):
     try:
-        global inicio_captura, fim_captura, tamanho_maior_pacote, pacotes_incompletos, tamanho_total_pacotes, ip_par_com_maior_trafego, maior_trafego, interacoes_ip
+        pacote = arquivo.read(16)
+        timestamp_seconds, timestamp_microseconds, captured_len, original_len = struct.unpack(
+            '!IIII', pacote)
+        return {
+            "Número do Pacote": numero_pacote,
+            "Timestamp (Segundos)": timestamp_seconds,
+            "Timestamp (Microssegundos ou Nanossegundos)": timestamp_microseconds,
+            "Tamanho Capturado do Pacote": captured_len,
+            "Tamanho Original do Pacote": original_len,
+        }
+    except struct.error:
+        return None
 
-        with open(arquivo, 'rb') as pcap_file:
-            pcap = dpkt.pcap.Reader(pcap_file)
+def main():
+    nome_arquivo_cap = input("Digite o nome do arquivo .cap: ")
+    inicio_captura = None
+    fim_captura = None
+    tamanho_maior_pacote = 0
+    pacotes_incompletos = 0
+    tamanho_total_pacotes = 0
+    ip_par_com_maior_trafego = ("N/A", "N/A")
+    interacoes_ip = []
 
-            for timestamp, buf in pcap:
-                if inicio_captura is None or timestamp < inicio_captura:
-                    inicio_captura = timestamp
-                if fim_captura is None or timestamp > fim_captura:
-                    fim_captura = timestamp
+    try:
+        with open(nome_arquivo_cap, 'rb') as arquivo:
+            cabecalho = ler_cabecalho_arquivo_cap(arquivo)
+            if cabecalho:
+                print("Cabeçalho do Arquivo .cap:")
+                for chave, valor in cabecalho.items():
+                    print(f"{chave}: {valor}")
 
-                eth = dpkt.ethernet.Ethernet(buf)
-                if eth.type != dpkt.ethernet.ETH_TYPE_IP:
-                    continue
+                pacotes = ler_pacotes(arquivo)
+                if pacotes:
+                    for pacote in pacotes:
+                        tamanho_pacote = pacote.get("Tamanho Original do Pacote", 0)
+                        timestamp_seconds = pacote.get("Timestamp (Segundos)", 0)
 
-                # Obtenha o pacote IP a partir do quadro Ethernet
-                ip = eth.data
+                        if inicio_captura is None:
+                            inicio_captura = timestamp_seconds
+                        fim_captura = timestamp_seconds
 
-                # Tamanho do pacote
-                tamanho_pacote = len(buf)
-                tamanho_total_pacotes += tamanho_pacote
+                        if tamanho_pacote > tamanho_maior_pacote:
+                            tamanho_maior_pacote = tamanho_pacote
 
-                # Verifique o tamanho do maior pacote
-                if tamanho_pacote > tamanho_maior_pacote:
-                    tamanho_maior_pacote = tamanho_pacote
+                        if pacote.get("Tamanho Capturado do Pacote", 0) < tamanho_pacote:
+                            pacotes_incompletos += 1
 
-                # Verifique se o pacote está incompleto
-                if len(buf) < ip.len:
-                    pacotes_incompletos += 1
+                        tamanho_total_pacotes += tamanho_pacote
 
-                # Rastreie as interações entre endereços IP
-                endereco_origem = dpkt.utils.inet_to_str(ip.src)
-                endereco_destino = dpkt.utils.inet_to_str(ip.dst)
-                interacoes_ip[endereco_origem] = interacoes_ip.get(endereco_origem, set())
-                interacoes_ip[endereco_origem].add(endereco_destino)
+                        # Adicione aqui a lógica para acompanhar o par de IP com maior tráfego
+                        # e as interações IP.
 
-                # Verifique qual par de IPs tem o maior tráfego
-                trafego = len(interacoes_ip[endereco_origem])
-                if trafego > maior_trafego:
-                    maior_trafego = trafego
-                    ip_par_com_maior_trafego = (endereco_origem, endereco_destino)
-    except FileNotFoundError as e:
-        print(f"Erro: O arquivo {arquivo} não foi encontrado.")
+                    print(f"a) Captura iniciou em: {inicio_captura} e terminou em: {fim_captura}")
+                    print(f"b) Tamanho do maior pacote capturado: {tamanho_maior_pacote} bytes")
+                    print(f"c) Pacotes incompletos: {pacotes_incompletos}")
+                    print(f"d) Tamanho médio dos pacotes capturados: {tamanho_total_pacotes / (pacotes_incompletos + 1)} bytes")
+                    print(f"e) Par de IP com maior tráfego: {ip_par_com_maior_trafego[0]} <-> {ip_par_com_maior_trafego[1]}")
+                    print(f"f) Número de interações com outros IPs para o IP da interface capturada: {len(interacoes_ip)}")
+                else:
+                    print("Nenhum pacote encontrado no arquivo .cap.")
+            else:
+                print("Arquivo .cap não possui um cabeçalho válido.")
+
+    except FileNotFoundError:
+        print(f'ERRO: O arquivo {nome_arquivo_cap} não foi encontrado.')
     except Exception as e:
-        print(f"Erro ao ler o arquivo PCAP {arquivo}: {str(e)}")
+        print(f'ERRO: {e}')
 
-arquivos_pcap = ['cap1.dump', 'cap2.dump']
-inicio_captura = None
-fim_captura = None
-tamanho_maior_pacote = 0
-pacotes_incompletos = 0
-tamanho_total_pacotes = 0
-ip_par_com_maior_trafego = None
-maior_trafego = 0
-interacoes_ip = {}
+if __name__ == "__main__":
+    main()
 
-for arquivo in arquivos_pcap:
-    print(f"Lendo arquivo: {arquivo}")
-    ler_pcap(arquivo)
-print(f"a) Captura iniciou em: {inicio_captura} e terminou em: {fim_captura}")
-print(f"b) Tamanho do maior pacote capturado: {tamanho_maior_pacote} bytes")
-print(f"c) Pacotes incompletos: {pacotes_incompletos}")
-print(f"d) Tamanho médio dos pacotes capturados: {tamanho_total_pacotes / (pacotes_incompletos + 1)} bytes")
-print(f"e) Par de IP com maior tráfego: {ip_par_com_maior_trafego[0]} <-> {ip_par_com_maior_trafego[1]}")
-print(f"f) Número de interações com outros IPs para o IP da interface capturada: {len(interacoes_ip)}")
 
 
