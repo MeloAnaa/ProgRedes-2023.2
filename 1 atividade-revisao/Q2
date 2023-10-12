@@ -76,4 +76,9 @@ def main():
 
     sucesso_ordenacao, lista_ordenada = ordena_lista(nome_arquivo, metodo_ordena)
 
-    
+    if sucesso_ordenacao:
+        print(f"Lista ordenada:", lista_ordenada)
+    else:
+        print(f"Erro na leitura do arquivo ou na ordenação da lista.")
+if __name__ == "__main__":
+    main()
