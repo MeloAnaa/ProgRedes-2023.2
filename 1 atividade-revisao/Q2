@@ -70,7 +70,6 @@ def ordena_lista(nome_arquivo, metodo_ordena):
             return False, None
     else:
         return False, None
-
 def main():
     nome_arquivo = input(f"Digite o nome do arquivo: ")
     metodo_ordena = input(f"Digite o método de ordenação (BUBBLE, INSERTION, SELECTION, QUICK): ").upper()
