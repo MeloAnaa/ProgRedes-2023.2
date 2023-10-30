@@ -1,0 +1,11 @@
+
+ex01: como alterar o codigo 'exemplos_01_get_html.py' 
+para finalizar o laco ao terminar o codigo?
+sem dar erro de timeout? 
+
+
+ex2:alterar o codigo 'exemplo_05_download_imagem.py'
+sem que o programa selocite a url completa da imagem(trate excecoes e salve a imagem com seu proprio nome)
+
+ex3:idem a 1, sendo que nao ha a informacao do tamanho do conteudo no 
+head do repositorio http(chuncked)
