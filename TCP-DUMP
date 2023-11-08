@@ -1,10 +1,10 @@
-import struct
+
+import struct,sys
 
 def ler_cabecalho_arquivo_cap(arquivo):
     try:
         cabecalho = arquivo.read(24)
-        magic_number, major_version, minor_version, reserved1, reserved2, snaplen, fcs, link_type = struct.unpack(
-            '!IHHIIIIH', cabecalho)
+        magic_number, major_version, minor_version, reserved1, reserved2, snaplen, fcs, link_type = struct.unpack('!IHHIIIIH', cabecalho)
         return {
             "Número Mágico": hex(magic_number),
             "Versão Principal": major_version,
@@ -36,8 +36,7 @@ def ler_pacotes(arquivo):
 def ler_pacote(arquivo, numero_pacote):
     try:
         pacote = arquivo.read(16)
-        timestamp_seconds, timestamp_microseconds, captured_len, original_len = struct.unpack(
-            '!IIII', pacote)
+        timestamp_seconds, timestamp_microseconds, captured_len, original_len = struct.unpack('!IIII', pacote)
         return {
             "Número do Pacote": numero_pacote,
             "Timestamp (Segundos)": timestamp_seconds,
@@ -57,7 +56,6 @@ def main():
     tamanho_total_pacotes = 0
     ip_par_com_maior_trafego = ("N/A", "N/A")
     interacoes_ip = []
-
     try:
         with open(nome_arquivo_cap, 'rb') as arquivo:
             cabecalho = ler_cabecalho_arquivo_cap(arquivo)
@@ -65,28 +63,20 @@ def main():
                 print("Cabeçalho do Arquivo .cap:")
                 for chave, valor in cabecalho.items():
                     print(f"{chave}: {valor}")
-
                 pacotes = ler_pacotes(arquivo)
                 if pacotes:
                     for pacote in pacotes:
                         tamanho_pacote = pacote.get("Tamanho Original do Pacote", 0)
                         timestamp_seconds = pacote.get("Timestamp (Segundos)", 0)
-
                         if inicio_captura is None:
                             inicio_captura = timestamp_seconds
                         fim_captura = timestamp_seconds
-
                         if tamanho_pacote > tamanho_maior_pacote:
                             tamanho_maior_pacote = tamanho_pacote
-
                         if pacote.get("Tamanho Capturado do Pacote", 0) < tamanho_pacote:
                             pacotes_incompletos += 1
-
                         tamanho_total_pacotes += tamanho_pacote
-
-                        # Adicione aqui a lógica para acompanhar o par de IP com maior tráfego
-                        # e as interações IP.
-
+                       
                     print(f"a) Captura iniciou em: {inicio_captura} e terminou em: {fim_captura}")
                     print(f"b) Tamanho do maior pacote capturado: {tamanho_maior_pacote} bytes")
                     print(f"c) Pacotes incompletos: {pacotes_incompletos}")
@@ -97,7 +87,6 @@ def main():
                     print("Nenhum pacote encontrado no arquivo .cap.")
             else:
                 print("Arquivo .cap não possui um cabeçalho válido.")
-
     except FileNotFoundError:
         print(f'ERRO: O arquivo {nome_arquivo_cap} não foi encontrado.')
     except Exception as e:
@@ -105,6 +94,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
