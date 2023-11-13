@@ -1,1 +1,198 @@
+#canner.go
+#scan ips e portas
+
+
+package scanner
+
+import (
+	"fmt"
+	"net"
+	"sync"
+	"time"
+)
+
+
+// Scanner permite que a porta scaneie multiplos ips para multiplas portas
+type Scanner struct {
+	ips         []net.IP
+	timeout     time.Duration
+	ports       []int
+	protocols   []string
+	maxParallel int
+}
+
+
+// AddressSet é um conjunto do IP porta e protocolo de um serviço que responde. 
+type AddressSet struct {
+	IP       net.IP
+	Port     int
+	Protocol string
+}
+
+
+// ComTimeout é usado como uma opção em NewScanner para definir o timeout para o dial da porta
+func WithTimeout(timeout time.Duration) func(*Scanner) {
+	return func(s *Scanner) {
+		s.timeout = timeout
+	}
+}
+
+
+// ComProtocols é usado como uma opção em NewScanner para definir os protocolos para testar as portas com
+func WithProtocols(protocols []string) func(*Scanner) {
+	return func(s *Scanner) {
+		s.protocols = protocols
+	}
+}
+
+
+
+// ComPortas é usado como uma opção em NewScanner para definir as portas a serem escaneadas
+func WithPorts(ports []int) func(*Scanner) {
+	return func(s *Scanner) {
+		s.SetPorts(ports)
+	}
+}
+
+
+
+// ComExecuçõesParalelas é usado como uma opção em NewScanner para o máximo de sondas paralelas a serem usadas
+func WithParallelRunners(max int) func(*Scanner) {
+	return func(s *Scanner) {
+		s.maxParallel = max
+	}
+}
+
+
+
+// AdicionaCIDR adiciona todos os IPs em uma notação CIDR à lista de IPs a serem escaneados
+func (s *Scanner) AddCIDR(cidr string) error {
+	ip, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return err
+	}
+
+	for ip := ip.Mask(ipnet.Mask); ipnet.Contains(ip); inc(ip) {
+		s.ips = append(s.ips, copyIP(ip))
+	}
+
+	return nil
+}
+
+
+
+// AdicionaIP adiciona um único IP à lista de IPs a serem escaneados
+func (s *Scanner) AddIP(ip string) error {
+	netIP := net.ParseIP(ip)
+	if netIP == nil {
+		return fmt.Errorf("%s is not a valid IP", ip)
+	}
+
+	s.ips = append(s.ips, netIP)
+	return nil
+}
+
+
+
+// DefinePortas define a porta a ser escaneada
+func (s *Scanner) SetPorts(ports []int) {
+	s.ports = ports
+}
+
+
+
+// Realiza uma varredura de rede e retorna os endereços que respondem
+func (s *Scanner) Scan() []AddressSet {
+	guard := make(chan struct{}, s.maxParallel)
+	results := []AddressSet{}
+	resultsMutex := sync.Mutex{}
+	var wg sync.WaitGroup
+	for _, ip := range s.ips {
+		for _, port := range s.ports {
+			for _, proto := range s.protocols {
+				addr := fmt.Sprintf("%s:%d", ip, port)
+
+				wg.Add(1)
+				go func(proto, addr string) {
+					defer wg.Done()
+
+					guard <- struct{}{}
+					c, err := net.DialTimeout(proto, addr, s.timeout)
+					<-guard
+					if err == nil {
+						c.Close()
+						resultsMutex.Lock()
+						results = append(results, AddressSet{
+							IP:       copyIP(ip),
+							Port:     port,
+							Protocol: proto,
+						})
+						resultsMutex.Unlock()
+					}
+				}(proto, addr)
+			}
+		}
+	}
+	wg.Wait()
+
+	return results
+}
+
+type logger interface {
+	Debugf(format string, a ...interface{})
+	Infof(format string, a ...interface{})
+}
+
+
+
+
+
+
+
+
+
+
+// logger interface ------nao use--------------
+func (s *Scanner) ScanToLogger(log logger) {
+	guard := make(chan struct{}, s.maxParallel)
+	var wg sync.WaitGroup
+	for _, ip := range s.ips {
+		for _, port := range s.ports {
+			for _, proto := range s.protocols {
+				addr := fmt.Sprintf("%s:%d", ip, port)
+
+				wg.Add(1)
+				go func(proto, addr string) {
+					defer wg.Done()
+
+					guard <- struct{}{}
+					log.Debugf("Scanning %s://%s", proto, addr)
+					c, err := net.DialTimeout(proto, addr, s.timeout)
+					<-guard
+					if err == nil {
+						c.Close()
+						log.Infof("%s://%s is alive and reachable", proto, addr)
+					}
+				}(proto, addr)
+			}
+		}
+	}
+	wg.Wait()
+}
+
+func inc(ip net.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
+			break
+		}
+	}
+}
+
+func copyIP(ip net.IP) net.IP {
+	dup := make(net.IP, len(ip))
+	copy(dup, ip)
+	return dup
+}
+
 
