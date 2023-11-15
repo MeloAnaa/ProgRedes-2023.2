@@ -1,46 +1,70 @@
 
 import socket,sys
 
-url_host = 'httpbin.org'
-url_image = '/image/png'
+def download_image(url_host, url_image):
+    # Construindo a solicitação HTTP
+    url_request = f'GET {url_image} HTTP/1.1\r\nHost: {url_host}\r\n\r\n'
 
-url_request = f'GET {url_image} HTTP/1.1\r\nHOST: {url_host}\r\n\r\n'
+    HOST_PORT = 80
+    BUFFER_SIZE = 1024
 
-HOST_PORT = 80
-BUFFER_SIZE = 1024
+    sock_img = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-sock_img = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock_img.connect((url_host, HOST_PORT))
-sock_img.sendall(url_request.encode())
+    try:
+        # Conectar ao servidor web
+        sock_img.connect((url_host, HOST_PORT))
+        sock_img.sendall(url_request.encode())
 
-print('\nBaixando a imagem...')
-# Montado a variável que armazenará os dados de retorno
-data_ret = b''
-while True:
-    data = sock_img.recv(BUFFER_SIZE)
-    if not data:
-        break
-    data_ret += data
+        print('\nBaixando a imagem...')
+        
+        # Montando a variável que armazenará os dados de retorno
+        data_ret = b''
+        
+        while True:
+            data = sock_img.recv(BUFFER_SIZE)
+            if not data:
+                break
+            data_ret += data
 
-sock_img.close()
+        # Obtendo o tamanho da imagem
+        img_size = -1
+        tmp = data_ret.split(b'\r\n')
+        
+        for line in tmp:
+            if b'Content-Length:' in line:
+                img_size = int(line.split()[1])
+                break
+        
+        if img_size == -1:
+            raise ValueError("Não foi possível obter o tamanho da imagem.")
+        
+        print(f'\nTamanho da Imagem: {img_size} bytes')
 
-# Obtendo o tamanho da imagem
-img_size = -1
-tmp = data_ret.split(b'\r\n')
-for line in tmp:
-    if b'Content-Length:' in line:
-        img_size = int(line.split()[1])
-        break
-print(f'\nTamanho da Imagem: {img_size} bytes')
+        # Separando o Cabeçalho dos Dados
+        delimiter = b'\r\n\r\n'
+        position = data_ret.find(delimiter)
+        headers = data_ret[:position]
+        image = data_ret[position + 4:]
 
-# Separando o Cabeçalho dos Dados
-delimiter = b'\r\n\r\n'
-position = data_ret.find(delimiter)
-headers = data_ret[:position]
-image = data_ret[position + 4:]
+        # Salvando a imagem
+        image_name = url_image.split("/")[-1]
+        
+        with open(image_name, 'wb') as file_output:
+            file_output.write(image)
 
-# Salvando a imagem
-with open('image.png', 'wb') as file_output:
-    file_output.write(image)
+        print(f'Imagem salva como "{image_name}".')
 
-print('Imagem salva como "image.png".')
+    except socket.error as e:
+        print(f"Erro de conexão: {e}")
+    except ValueError as e:
+        print(f"Erro: {e}")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+    finally:
+        sock_img.close()
+
+if __name__ == "__main__":
+    url_host = input('\nInforme o nome do HOST ou URL do site: ')
+    url_image = input('\nInforme a URL completa da imagem: ')
+    
+    download_image(url_host, url_image)
