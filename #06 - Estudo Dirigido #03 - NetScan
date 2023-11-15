@@ -1,4 +1,11 @@
-import socket
+import socket,sys
+
+def generate_port_list(filename):
+    with open(filename, 'w') as file:
+        for port in range(996):  # Gera portas de 0 a 995
+            protocol = 'TCP' if port % 2 == 0 else 'UDP'
+            description = f"Porta de {port}"
+            file.write(f"{port} {protocol} {description}\n")
 
 def load_ports(filename):
     ports = []
@@ -36,13 +43,16 @@ def check_ports(host, ports):
 
 if __name__ == "__main__":
     try:
-        host = input("Digite o endereço IP ou host a ser verificado: ")
+        generate_port_list("port_list.txt")  # Gera o arquivo de listagem de portas
+        strHost = input("Digite o endereço IP ou host a ser verificado: ")
+        ipHost = socket.gethostbyname(strHost)
         ports = load_ports("port_list.txt")
 
         print("\nVerificando portas...\n")
-        check_ports(host, ports)
+        check_ports(ipHost, ports)
     except KeyboardInterrupt:
         print("\nOperação interrompida pelo usuário.")
     except Exception as e:
         print(f"Erro geral: {e}")
+
 
