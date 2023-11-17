@@ -56,3 +56,69 @@ if __name__ == "__main__":
         print(f"Erro geral: {e}")
 
 
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+import socket
+import sys
+
+def generate_port_list(filename, port_range):
+    with open(filename, 'w') as file:
+        for port in range(port_range[0], port_range[1] + 1):  # Generate ports within the specified range
+            protocol = 'TCP' if port % 2 == 0 else 'UDP'
+            description = f"Porta de {port}"
+            file.write(f"{port} {protocol} {description}\n")
+
+def load_ports(filename):
+    ports = []
+    try:
+        with open(filename, 'r') as file:
+            for line in file:
+                parts = line.strip().split()
+                if len(parts) == 3:
+                    ports.append({
+                        'number': int(parts[0]),
+                        'protocol': parts[1],
+                        'description': parts[2]
+                    })
+    except FileNotFoundError:
+        print(f"Erro: O arquivo {filename} não foi encontrado.")
+    except Exception as e:
+        print(f"Erro ao carregar as portas do arquivo: {e}")
+    return ports
+
+def check_ports(host, ports, timeout):
+    for port in ports:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM if port['protocol'] == 'TCP' else socket.SOCK_DGRAM)
+        sock.settimeout(timeout)
+
+        try:
+            result = sock.connect_ex((host, port['number']))
+
+            status = "Responde (Aberta)" if result == 0 else "Não Responde (Fechada)"
+
+            print(f"Porta {port['number']}: Protocolo: {port['protocol']}: ({port['description']})/ Status: {status}")
+        except socket.error as e:
+            print(f"Erro ao verificar a porta {port['number']}: {e}")
+        finally:
+            sock.close()
+
+if __name__ == "__main__":
+    try:
+        start_port = int(input("Digite o início do intervalo de portas: "))
+        end_port = int(input("Digite o fim do intervalo de portas: "))
+        port_range = (start_port, end_port)
+
+        generate_port_list("port_list.txt", port_range)  # Gera o arquivo de listagem de portas
+        strHost = input("Digite o endereço IP ou host a ser verificado: ")
+        ipHost = socket.gethostbyname(strHost)
+        ports = load_ports("port_list.txt")
+
+        timeout = float(input("Digite o tempo limite de conexão (em segundos): "))
+
+        print("\nVerificando portas...\n")
+        check_ports(ipHost, ports, timeout)
+    except KeyboardInterrupt:
+        print("\nOperação interrompida pelo usuário.")
+    except Exception as e:
+        print(f"Erro geral: {e}")
