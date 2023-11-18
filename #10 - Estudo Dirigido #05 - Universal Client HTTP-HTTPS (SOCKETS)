@@ -1,70 +1,47 @@
 
-import socket,sys
+import socket
+import os
 
-def download_image(url_host, url_image):
-    # Construindo a solicitação HTTP
-    url_request = f'GET {url_image} HTTP/1.1\r\nHost: {url_host}\r\n\r\n'
+# Constantes
+BUFFER_SIZE = 1024
 
-    HOST_PORT = 80
-    BUFFER_SIZE = 1024
+def baixar_imagem(url):
+    # Analisar a URL para extrair o host e o caminho da imagem
+    partes_url = url.split('/')
+    host = partes_url[2]
+    caminho_imagem = '/'.join(partes_url[3:])
 
+    # Estabelecer uma conexão de soquete
     sock_img = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock_img.connect((host, 80))
 
-    try:
-        # Conectar ao servidor web
-        sock_img.connect((url_host, HOST_PORT))
-        sock_img.sendall(url_request.encode())
+    # Criar a solicitação HTTP
+    requisicao_url = f'GET /{caminho_imagem} HTTP/1.1\r\nHOST: {host}\r\n\r\n'
+    sock_img.sendall(requisicao_url.encode())
 
-        print('\nBaixando a imagem...')
-        
-        # Montando a variável que armazenará os dados de retorno
-        data_ret = b''
-        
-        while True:
-            data = sock_img.recv(BUFFER_SIZE)
-            if not data:
-                break
-            data_ret += data
+    print('\nBaixando a imagem...')
 
-        # Obtendo o tamanho da imagem
-        img_size = -1
-        tmp = data_ret.split(b'\r\n')
-        
-        for line in tmp:
-            if b'Content-Length:' in line:
-                img_size = int(line.split()[1])
-                break
-        
-        if img_size == -1:
-            raise ValueError("Não foi possível obter o tamanho da imagem.")
-        
-        print(f'\nTamanho da Imagem: {img_size} bytes')
+    # Inicializar variáveis para armazenar os dados da imagem
+    dados_retorno = b''
 
-        # Separando o Cabeçalho dos Dados
-        delimiter = b'\r\n\r\n'
-        position = data_ret.find(delimiter)
-        headers = data_ret[:position]
-        image = data_ret[position + 4:]
+    while True:
+        dados = sock_img.recv(BUFFER_SIZE)
+        if not dados:
+            break
+        dados_retorno += dados
 
-        # Salvando a imagem
-        image_name = url_image.split("/")[-1]
-        
-        with open(image_name, 'wb') as file_output:
-            file_output.write(image)
+    sock_img.close()
 
-        print(f'Imagem salva como "{image_name}".')
+    # Extrair o nome do arquivo da URL
+    nome_arquivo = os.path.basename(caminho_imagem)
 
-    except socket.error as e:
-        print(f"Erro de conexão: {e}")
-    except ValueError as e:
-        print(f"Erro: {e}")
-    except Exception as e:
-        print(f"Erro inesperado: {e}")
-    finally:
-        sock_img.close()
+    # Salvar a imagem no mesmo diretório do programa
+    arquivo_saida = open(nome_arquivo, 'wb')
+    arquivo_saida.write(dados_retorno)
+    arquivo_saida.close()
 
-if __name__ == "__main__":
-    url_host = input('\nInforme o nome do HOST ou URL do site: ')
-    url_image = input('\nInforme a URL completa da imagem: ')
-    
-    download_image(url_host, url_image)
+    print(f'Imagem baixada com sucesso! Nome do arquivo: {nome_arquivo}')
+
+# Solicitar a URL completa da imagem ao usuário
+url = input('Informe a URL completa da imagem na WEB: ')
+baixar_imagem(url)
