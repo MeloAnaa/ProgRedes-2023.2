@@ -1,31 +1,92 @@
 # ProgRedes-2023.2
-Descrição do Projeto
-Este projeto consiste em uma aplicação cliente/servidor que permite monitorar e interagir com agentes remotos. O cliente (agente) é executado nos computadores dos usuários, coletando informações sobre o sistema e respondendo a comandos do servidor. O servidor gerencia múltiplas conexões de clientes simultaneamente e fornece comandos remotos por meio de um bot no Telegram.
+1-INTRODUÇÃO
 
-Tecnologias Utilizadas
-Socket: A comunicação entre o cliente e o servidor é realizada por meio de sockets TCP. Essa escolha proporciona uma comunicação confiável e bidirecional, permitindo uma troca eficiente de dados entre as partes.
-Estrutura do Projeto
-Cliente:
+Este é um projeto de uma aplicação cliente/servidor para monitoramento remoto. A aplicação permite que um servidor solicite informações sobre o hardware, programas instalados, histórico de navegação e detalhes do usuário de agentes clientes. A comunicação entre o cliente e o servidor ocorre por meio de sockets TCP.
 
-Ao ser executado, o cliente informa ao servidor que está online, fornecendo o nome do HOST, IP e usuário logado no sistema.
-Execução em segundo plano: O cliente é projetado para ser executado em segundo plano, liberando o terminal para o usuário após a inicialização.
-Verificação periódica do status do servidor: Caso o servidor esteja offline, o cliente verifica periodicamente se o servidor voltou online.
-Impedimento de múltiplas instâncias: Garante que apenas uma instância do cliente seja carregada na memória.
-Remoção do cliente da memória: Implementa uma forma para o cliente se remover da memória.
-Servidor:
+2-CONFIGURAÇÃO DO AMBIENTE 
 
-Suporte a múltiplas conexões: O servidor permite a conexão simultânea de vários clientes (agentes).
-Gerenciamento de conexões: Detecta quando um cliente fica offline e gerencia as conexões ativas.
-Execução em segundo plano: O servidor é projetado para ser executado em segundo plano, liberando o terminal para o usuário após a inicialização.
-Impedimento de múltiplas instâncias: Garante que apenas uma instância do servidor seja carregada na memória.
-Remoção do servidor da memória: Implementa uma forma para o servidor se remover da memória.
-Comandos remotos via Telegram:
-Informações do hardware.
-Lista de programas instalados (compatível com Windows e Linux).
-Histórico de navegação em navegadores específicos (Chrome, Firefox, Microsoft Edge, Opera e Safari).
-Informações detalhadas do usuário logado (compatível com Windows e Linux).
-Lista de agentes online com detalhes (IP, nome do HOST, usuário logado e tempo online).
+requisito: Python 3.x Instalação Clone este repositório: https://github.com/MeloAnaa/ProgRedes-2023.2/tree/main/PROJETO e Navegue até o diretório do projeto: cd PROJETO
 
-REQUESITOS
+USO DA APLICAÇÃO
+
+Cliente (Agente)
+
+Inicialização:
+<pre>
+  python cliente.py
+</pre>
+
+Funcionalidades:
+<br>
+-Informa ao servidor que está online com o nome do HOST, IP e usuário logado.
+<br>
+-Executa em segundo plano.
+<br>
+-Testa periodicamente se o servidor está online.
+<br>
+-Evita múltiplas instâncias na memória.
+<br>
+-Permite a remoção da memória.
+<br>
+-Responde a requisições do servidor.
+<br>
+
+3-SERVIDOR
+
+Inicialização:
+<pre>
+  python servidor.py
+</pre>
+
+Funcionalidades:
+<br>
+-Permite conexão simultânea de vários clientes.
+<br>
+-gerencia conexões ativas e detecta clientes offline.
+<br>
+-Executa em segundo plano.
+<br>
+-Evita múltiplas instâncias na memória.
+<br>
+-Permite a remoção da memória.
+<br>
+-Comandos disponíveis via bot no Telegram:
+<br>
+/hardware: Obtém informações do hardware.
+<br>
+/programas: Obtém a lista de programas instalados.
+<br>
+/historico: Obtém o histórico de navegação.
+<br>
+/usuario: Obtém detalhes do usuário logado.
+<br>
+/agentes_online: Lista os agentes online com suas informações.
+
+
+
+4-ESCOLHA O PROTOCOLO
+
+O protocolo escolhido para a comunicação entre o cliente e o servidor é o TCP. Isso se deve à necessidade de uma comunicação confiável, garantindo que os dados sejam entregues sem perda, na ordem correta e sem duplicatas. Além disso, o TCP oferece controle de congestionamento, o que é crucial para garantir um desempenho eficiente na transmissão de dados em redes.
+
+
+AS PRINCIPAIS FUNCIONALIDADES DA APLICACAO CLIENTE SÃO
+
+-Informar ao servidor que está on-line.
+<br>
+-Responder a requisições do servidor.
+<br>
+-Verificar se o servidor está on-line.
+<br>
+-As principais funcionalidades da aplicação servidora são:
+<br>
+-Gerenciar as conexões com os clientes.
+<br>
+-Responder às requisições dos clientes.
+<br>
+-Detectar quando um cliente fica off-line.
+<br>
+-A aplicação cliente e servidor serão executadas em segundo plano e não permitirão que uma segunda instância delas seja carregada na memória.
+<br>
+-Além disso, as aplicações terão uma forma para se remover da memória.
 
 
