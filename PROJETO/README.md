@@ -25,3 +25,7 @@ Lista de programas instalados (compatível com Windows e Linux).
 Histórico de navegação em navegadores específicos (Chrome, Firefox, Microsoft Edge, Opera e Safari).
 Informações detalhadas do usuário logado (compatível com Windows e Linux).
 Lista de agentes online com detalhes (IP, nome do HOST, usuário logado e tempo online).
+
+REQUESITOS
+
+
