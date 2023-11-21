@@ -5,7 +5,13 @@ Este é um projeto de uma aplicação cliente/servidor para monitoramento remoto
 
 2-CONFIGURAÇÃO DO AMBIENTE 
 
-requisito: Python 3.x Instalação Clone este repositório: https://github.com/MeloAnaa/ProgRedes-2023.2/tree/main/PROJETO e Navegue até o diretório do projeto: cd PROJETO
+requisitos:
+<br>
+Python 3.x
+<br>
+Instalação Clone este repositório: https://github.com/MeloAnaa/ProgRedes-2023.2/tree/main/PROJETO
+<br>
+Navegue até o diretório do projeto: cd PROJETO
 
 USO DA APLICAÇÃO
 
