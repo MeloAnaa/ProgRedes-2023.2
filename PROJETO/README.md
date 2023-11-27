@@ -18,7 +18,6 @@ Clone este repositório: https://github.com/MeloAnaa/ProgRedes-2023.2/tree/main/
 Navegue até o diretório do projeto: cd PROJETO
 
 USO DA APLICAÇÃO
-
 Cliente (Agente)
 
 Inicialização:
