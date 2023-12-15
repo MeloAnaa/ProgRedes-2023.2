@@ -2,7 +2,7 @@
 import socket
 import time
 import json
-
+import requests
 
 API_TOKEN = "YOUR_API_TOKEN_HERE"
 
@@ -10,11 +10,9 @@ API_TOKEN = "YOUR_API_TOKEN_HERE"
 HOST = "localhost"
 PORT = 8080
 
-
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((HOST, PORT))
 server.listen(1)
-
 
 def send_message(chat_id, text):
     # Monta o payload da mensagem
@@ -23,44 +21,34 @@ def send_message(chat_id, text):
         "text": text
     })
 
-  
     requests.post("https://api.telegram.org/bot{}/sendMessage".format(API_TOKEN), data=payload)
 
 # Função para tratar as mensagens do usuário
 def handle_message(message):
     # Extrai o ID do chat
     chat_id = message["chat"]["id"]
-
- 
     text = message["text"]
 
     # Trata as mensagens de acordo com o comando
     try:
-        # Comandos válidos
         if text == "/start":
-            # Envia uma mensagem de boas-vindas
             send_message(chat_id, "Olá! Seja bem-vindo ao meu bot de monitoramento de rede.")
         elif text == "/info":
-            # Envia informações básicas sobre a rede
             send_message(chat_id, "IP: {}".format(socket.gethostbyname("localhost")))
-            send_message(chat_id, "Máscara: {}".format(socket.getnetmask(socket.gethostbyname("localhost")))
+            send_message(chat_id, "Máscara: {}".format(socket.getnetmask(socket.gethostbyname("localhost"))))
             send_message(chat_id, "Gateway: {}".format(socket.getdefaultgateway()))
         elif text == "/ping":
-            # Envia o tempo médio de ping
             send_message(chat_id, "Tempo médio de ping: {}ms".format(time.timeit("ping -c 4 localhost", setup="import socket", number=1) * 1000))
         elif text == "/active ip":
-            # Verifica se o IP está respondendo
             socket.create_connection((text, 80))
             send_message(chat_id, "O IP {} está respondendo".format(text))
-        elif text == "/service ip:port":
-            # Verifica se há um serviço escutando na porta
-            socket.create_connection((text.split(":")[0], int(text.split(":")[1])))
-            send_message(chat_id, "Há um serviço escutando na porta {} do IP {}".format(text.split(":")[1], text.split(":")[0]))
+        elif text.startswith("/service"):
+            ip, port = text.split(" ")[1].split(":")
+            socket.create_connection((ip, int(port)))
+            send_message(chat_id, "Há um serviço escutando na porta {} do IP {}".format(port, ip))
         elif text == "/dns":
-            # Envia o servidor de DNS
-            send_message(chat_id, "Servidor de DNS: {}".format(socket.gethostbyname("localhost")))
+            send_message(chat_id, "Servidor de DNS: {}".format(socket.getfqdn("localhost")))
         elif text == "/map":
-            # Lista as máquinas e portas ativas no segmento de rede local
             for ip in socket.gethostbyname_ex("localhost")[2]:
                 if ip != socket.gethostbyname("localhost"):
                     try:
@@ -69,23 +57,23 @@ def handle_message(message):
                     except:
                         pass
         else:
-            # Comando inválido
             send_message(chat_id, "Comando inválido.")
     except (ConnectionError, TimeoutError):
-        # Erro ao conectar ao IP ou porta especificados
         send_message(chat_id, "Erro ao conectar ao IP ou porta especificado.")
     except Exception:
-        # Erro inesperado
         send_message(chat_id, "Erro inesperado.")
 
 # Loop principal
 while True:
-    # Aceita uma nova conexão
     connection, address = server.accept()
+    message = b""
+    while True:
+        data = connection.recv(1024)
+        if not data:
+            break
+        message += data
 
-    # Lê a mensagem do usuário
-    message = connection.recv(1024)
-
-    # Trata a mensagem
     handle_message(json.loads(message.decode()))
+    connection.close()
+
 
