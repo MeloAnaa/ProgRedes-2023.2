@@ -1,79 +1,42 @@
-
 import socket
-import time
-import json
 import requests
+import subprocess
 
-API_TOKEN = "YOUR_API_TOKEN_HERE"
+API_TOKEN, HOST, PORT = "YOUR_API_TOKEN_HERE", "localhost", 8080
 
-# Define o endereço e a porta do bot
-HOST = "localhost"
-PORT = 8080
+def send_msg(chat_id, text):
+    requests.post(f"https://api.telegram.org/bot{API_TOKEN}/sendMessage", data={"chat_id": chat_id, "text": text})
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((HOST, PORT))
-server.listen(1)
+def handle_msg(msg):
+    chat_id, text = msg["chat"]["id"], msg["text"]
 
-def send_message(chat_id, text):
-    # Monta o payload da mensagem
-    payload = json.dumps({
-        "chat_id": chat_id,
-        "text": text
-    })
-
-    requests.post("https://api.telegram.org/bot{}/sendMessage".format(API_TOKEN), data=payload)
-
-# Função para tratar as mensagens do usuário
-def handle_message(message):
-    # Extrai o ID do chat
-    chat_id = message["chat"]["id"]
-    text = message["text"]
-
-    # Trata as mensagens de acordo com o comando
     try:
         if text == "/start":
-            send_message(chat_id, "Olá! Seja bem-vindo ao meu bot de monitoramento de rede.")
+            send_msg(chat_id,ola! Seja bem-vindo ao meu bot de monitoramento de rede.")
         elif text == "/info":
-            send_message(chat_id, "IP: {}".format(socket.gethostbyname("localhost")))
-            send_message(chat_id, "Máscara: {}".format(socket.getnetmask(socket.gethostbyname("localhost"))))
-            send_message(chat_id, "Gateway: {}".format(socket.getdefaultgateway()))
+            info = {k: v for k, v in zip(["IP", "mascara", "gateway"], socket.gethostbyname("localhost"), socket.getnetmask(socket.gethostbyname("localhost")), socket.getdefaultgateway())}
+            send_msg(chat_id, "\n".join(f"{k}: {v}" for k, v in info.items()))
         elif text == "/ping":
-            send_message(chat_id, "Tempo médio de ping: {}ms".format(time.timeit("ping -c 4 localhost", setup="import socket", number=1) * 1000))
-        elif text == "/active ip":
-            socket.create_connection((text, 80))
-            send_message(chat_id, "O IP {} está respondendo".format(text))
-        elif text.startswith("/service"):
-            ip, port = text.split(" ")[1].split(":")
-            socket.create_connection((ip, int(port)))
-            send_message(chat_id, "Há um serviço escutando na porta {} do IP {}".format(port, ip))
-        elif text == "/dns":
-            send_message(chat_id, "Servidor de DNS: {}".format(socket.getfqdn("localhost")))
-        elif text == "/map":
-            for ip in socket.gethostbyname_ex("localhost")[2]:
-                if ip != socket.gethostbyname("localhost"):
-                    try:
-                        socket.create_connection((ip, 80))
-                        send_message(chat_id, "{}:80".format(ip))
-                    except:
-                        pass
+            result = subprocess.run(["ping", "-c", "4", "localhost"], capture_output=True, text=True).stdout
+            send_msg(chat_id, f"tempo medio de ping: {result}")
+        elif text.startswith(("/active ip", "/service")):
+            ip, port = text.split()[-1].split(":")
+            response = "está respondendo" if subprocess.run(["nc", "-zv", ip, port], stderr=subprocess.PIPE).returncode == 0 else "não está respondendo"
+            send_msg(chat_id, f"O IP {ip} {response}")
         else:
-            send_message(chat_id, "Comando inválido.")
-    except (ConnectionError, TimeoutError):
-        send_message(chat_id, "Erro ao conectar ao IP ou porta especificado.")
-    except Exception:
-        send_message(chat_id, "Erro inesperado.")
+            send_msg(chat_id, "comando inválido.")
+    except Exception as e:
+        send_msg(chat_id, f"Erro: {e}")
 
-# Loop principal
-while True:
-    connection, address = server.accept()
-    message = b""
+with socket.socket() as server:
+    server.bind((HOST, PORT))
+    server.listen(1)
+
     while True:
-        data = connection.recv(1024)
-        if not data:
-            break
-        message += data
+        connection, address = server.accept()
+        msg = b""
+        while (data := connection.recv(1024)):
+            msg += data
 
-    handle_message(json.loads(message.decode()))
-    connection.close()
-
-
+        handle_msg(eval(msg.decode()))
+        connection.close()
