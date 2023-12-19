@@ -29,44 +29,26 @@ if __name__ == "__main__":
     iniciar_cliente()
 
 +---------------------------------------------------------------------------------------------------------------------------------------------------+
-
-# server.py
-import socket
-from socket_constants import *
-
 def iniciar_servidor():
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.bind((HOST_SERVER, SOCKET_PORT))
-    tcp_socket.listen(MAX_LISTEN)
+    with socket.socket() as tcp_socket:
+        tcp_socket.bind((HOST_SERVER, SOCKET_PORT))
+        tcp_socket.listen(MAX_LISTEN)
+        print(f"Servidor aguardando conexões {HOST_SERVER}:{SOCKET_PORT}")
 
-    print(f"Servidor aguardando conexões {HOST_SERVER}:{SOCKET_PORT}")
-
-    try:
-        while True:
-            conexao, cliente = tcp_socket.accept()
-            print(f'Conectado por: {cliente}')
-
+        try:
             while True:
-                mensagem = conexao.recv(BUFFER_SIZE)
-                if not mensagem:
-                    break
-                print(f'{cliente}: {mensagem.decode(CODE_PAGE)}')
+                conexao, cliente = tcp_socket.accept()
+                print(f'Conectado por: {cliente}')
 
-                # Devolvendo uma mensagem (echo) ao cliente
-                mensagem_retorno = 'Devolvendo...' + mensagem.decode(CODE_PAGE)
-                conexao.send(mensagem_retorno.encode(CODE_PAGE))
+                with conexao:
+                    while (msg := conexao.recv(BUFFER_SIZE)):
+                        print(f'{cliente}: {msg.decode(CODE_PAGE)}')
+                        msg_retorno = 'Devolvendo...' + msg.decode(CODE_PAGE)
+                        conexao.send(msg_retorno.encode(CODE_PAGE))
 
-            print(f'Finalizando Conexão do Cliente {cliente}')
-            conexao.close()
-
-    except KeyboardInterrupt:
-        print("Servidor encerrado manualmente.")
-
-    finally:
-        tcp_socket.close()
+                    print(f'Finalizando Conexão do Cliente {cliente}')
+        except KeyboardInterrupt:
+            print("servidor encerrado manualmente")
 
 if __name__ == "__main__":
     iniciar_servidor()
-
-
-
