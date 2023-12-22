@@ -1,42 +1,4 @@
 import socket
-import requests
-import subprocess
 
-API_TOKEN, HOST, PORT = "YOUR_API_TOKEN_HERE", "localhost", 8080
 
-def send_msg(chat_id, text):
-    requests.post(f"https://api.telegram.org/bot{API_TOKEN}/sendMessage", data={"chat_id": chat_id, "text": text})
-
-def handle_msg(msg):
-    chat_id, text = msg["chat"]["id"], msg["text"]
-
-    try:
-        if text == "/start":
-            send_msg(chat_id,ola! Seja bem-vindo ao meu bot de monitoramento de rede.")
-        elif text == "/info":
-            info = {k: v for k, v in zip(["IP", "mascara", "gateway"], socket.gethostbyname("localhost"), socket.getnetmask(socket.gethostbyname("localhost")), socket.getdefaultgateway())}
-            send_msg(chat_id, "\n".join(f"{k}: {v}" for k, v in info.items()))
-        elif text == "/ping":
-            result = subprocess.run(["ping", "-c", "4", "localhost"], capture_output=True, text=True).stdout
-            send_msg(chat_id, f"tempo medio de ping: {result}")
-        elif text.startswith(("/active ip", "/service")):
-            ip, port = text.split()[-1].split(":")
-            response = "está respondendo" if subprocess.run(["nc", "-zv", ip, port], stderr=subprocess.PIPE).returncode == 0 else "não está respondendo"
-            send_msg(chat_id, f"O IP {ip} {response}")
-        else:
-            send_msg(chat_id, "comando inválido.")
-    except Exception as e:
-        send_msg(chat_id, f"Erro: {e}")
-
-with socket.socket() as server:
-    server.bind((HOST, PORT))
-    server.listen(1)
-
-    while True:
-        connection, address = server.accept()
-        msg = b""
-        while (data := connection.recv(1024)):
-            msg += data
-
-        handle_msg(eval(msg.decode()))
-        connection.close()
+     
