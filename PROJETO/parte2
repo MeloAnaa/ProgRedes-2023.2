@@ -1,54 +1,73 @@
+#cliente.py
 
-HOST_SERVER = 'localhost'
-SOCKET_PORT = 12345
-BUFFER_SIZE = 1024
-MAX_LISTEN = 5
-CODE_PAGE = 'utf-8'
-
-# client.py
 import socket
-from socket_constants import *
+import time
+HOST        = 'localhost'
+PORT        = 65000       
+BUFFER_SIZE = 256         
+CODE_PAGE   = 'utf-8'     
 
-def iniciar_cliente():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_socket:
-        try:
-            tcp_socket.connect((HOST_SERVER, SOCKET_PORT))
-            print(f"Conectado ao servidor em {HOST_SERVER}:{SOCKET_PORT}")
 
-            while True:
-                msg = input('Digite a mensagem (ou "sair" para encerrar):')
-                if msg.lower() == 'sair':
-                    break
-                tcp_socket.sendall(msg.encode(CODE_PAGE))
-                resposta = tcp_socket.recv(BUFFER_SIZE)
-                print(f'Resposta do servidor: {resposta.decode(CODE_PAGE)}')
+tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        except Exception as e:
-            print(f"Erro ao se conectar ao servidor:{e}")
-if __name__ == "__main__":
-    iniciar_cliente()
+
+tentativas = 0
+
+while True:
+    try:
+        tcp_socket.connect((HOST, PORT))
+
+        print('Conexão estabelecida.')
+        print()
+        
+        msg = input('Digite a mensagem: ')
+        print('')
+        if msg:
+            msg = msg.encode(CODE_PAGE)
+            tcp_socket.send(msg)
+
+            data_retorno = tcp_socket.recv(BUFFER_SIZE)
+            msg_retorno = data_retorno.decode(CODE_PAGE)
+            print(f'Servidor diz: {msg_retorno}')
+
+    except (socket.error, ConnectionError):
+        # Lidar com a desconexão
+        print('Tentando conectar...')
+        time.sleep(5)
+        tentativas += 1
+        print(f"Tentativa de conexão: {tentativas}")
+
+        # Recriar o socket
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 
 +---------------------------------------------------------------------------------------------------------------------------------------------------+
-def iniciar_servidor():
-    with socket.socket() as tcp_socket:
-        tcp_socket.bind((HOST_SERVER, SOCKET_PORT))
-        tcp_socket.listen(MAX_LISTEN)
-        print(f"Servidor aguardando conexões {HOST_SERVER}:{SOCKET_PORT}")
 
-        try:
-            while True:
-                conexao, cliente = tcp_socket.accept()
-                print(f'Conectado por: {cliente}')
 
-                with conexao:
-                    while (msg := conexao.recv(BUFFER_SIZE)):
-                        print(f'{cliente}: {msg.decode(CODE_PAGE)}')
-                        msg_retorno = 'Devolvendo...' + msg.decode(CODE_PAGE)
-                        conexao.send(msg_retorno.encode(CODE_PAGE))
+import socket
+HOST = 'localhost'
+PORT = 65000
+BUFFER_SIZE = 256
+CODE_PAGE = 'utf-8'
 
-                    print(f'Finalizando Conexão do Cliente {cliente}')
-        except KeyboardInterrupt:
-            print("servidor encerrado manualmente")
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((HOST, PORT))
+server_socket.listen()
 
-if __name__ == "__main__":
-    iniciar_servidor()
+print(f'Servidor escutando em {HOST}:{PORT}')
+while True:
+    client_socket, client_address = server_socket.accept()
+    print(f'Conexao estabelecida com {client_address}')
+
+    data = client_socket.recv(BUFFER_SIZE)
+    if not data:
+        break
+
+    msg_cliente = data.decode(CODE_PAGE)
+    print(f'Cliente diz: {msg_cliente}')
+
+    msg_resposta = f'Recebido: {msg_cliente}'.encode(CODE_PAGE)
+    client_socket.send(msg_resposta)
+
+    client_socket.close()
+server_socket.close()
