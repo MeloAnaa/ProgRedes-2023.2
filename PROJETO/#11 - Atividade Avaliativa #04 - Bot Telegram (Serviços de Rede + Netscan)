@@ -1,4 +1,84 @@
-import socket
+#bot.py
+import os
+import subprocess
+import requests
+
+def send_msg(text):
+    token = "6788315183:AAG6g041wJ2RmHX_1WHrqrzjcOyIhkCO5II"
+    chat_id = "6440731935"
+    url_req = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={text}"
+    results = requests.get(url_req)
+    print(results.json())
+
+def process_message(message, socket):
+    if message == '/info':
+        return get_network_info()
+    elif message == '/ping':
+        return ping_google()
+    elif message.startswith('/active '):
+        return check_ip_response(message.split()[1])
+    elif message.startswith('/service '):
+        return check_service(message.split()[1])
+    elif message == '/dns':
+        return get_dns_info()
+    elif message == '/map':
+        return get_network_map()
+    else:
+        return "comando não reconhecido!"
+
+def get_network_info():
+    try:
+        ip_address = os.popen('hostname -I').read().strip().split()[0]
+        subnet_mask = '255.255.255.0'
+        gateway = os.popen("ip r | grep default | awk '{print $3}'").read().strip()
+        return f"informações basicas sobre a rede:\nIP: {ip_address}\nMáscara: {subnet_mask}\nGateway: {gateway}"
+    except Exception as e:
+        return f"erro ao obter informações de rede: {str(e)}"
+
+def try_to_connect(gateway):
+    try:
+        subprocess.run(['ping', '-c', '4', gateway], check=True)
+        return "conexão estabelecida"
+    except subprocess.CalledProcessError:
+        return "falha na conexão"
+    except Exception as e:
+        return f"erro ao tentar conectar: {str(e)}"
+
+def ping_google():
+    try:
+        result = subprocess.run(['ping', '-c', '4', 'google.com'], capture_output=True, text=True).stdout
+        return result
+    except Exception as e:
+        return f"erro ao executar o comando ping:{str(e)}"
+
+def check_ip_response(ip_address):
+    try:
+        result = subprocess.run(['ping', '-c', '4', ip_address], capture_output=True, text=True).stdout
+        return result
+    except Exception as e:
+        return f"erro ao verificar a resposta do IP {ip_address}:{str(e)}"
+
+def check_service(ip_and_port):
+    try:
+        ip, port = ip_and_port.split(':')
+        result = subprocess.run(['nc', '-zv', ip, port], capture_output=True, text=True).stdout
+        return result
+    except Exception as e:
+        return f"erro ao verificar o serviço em {ip_and_port}:{str(e)}"
+
+def get_dns_info():
+    try:
+        result = subprocess.run(['nslookup', 'google.com'], capture_output=True, text=True).stdout
+        return result
+    except Exception as e:
+        return f"erro ao obter informações de DNS:{str(e)}"
+
+def get_network_map():
+    try:
+        result = subprocess.run(['arp', '-a'], capture_output=True, text=True).stdout
+        return result
+    except Exception as e:
+        return f"erro ao obter o mapa de rede:{str(e)}"
 
 
      
