@@ -91,6 +91,8 @@ def processar_mensagem(msg):
         return obter_informacoes_dns()
     elif msg.lower() == '/map':
         return obter_mapa_de_rede()
+    elif msg.lower() == '/tchau':
+        return "Tchau, meu amigo!"
     else:
         return "comando nao reconhecido"
 
