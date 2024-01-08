@@ -16,7 +16,7 @@ TELEGRAM_API_URL = "https://api.telegram.org/bot6958977609:AAE5X1-eA9spI7dXOfal1
 TELEGRAM_CHAT_ID = "6440731935"
 
 
-tcp_socket=None
+
 
 
 def handle_client(connection, address):
@@ -50,7 +50,7 @@ def handle_client(connection, address):
 
 
 def start_server():
-    global tcp_socket
+
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
